@@ -55,6 +55,10 @@ func (v Vec3) Norm() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
 }
 
+func (v Vec3) PureQuat() Quat {
+	return Quat{0, v.X, v.Y, v.Z}
+}
+
 func (v *Vec3) Normalize() {
 	var vNormed = v.MulScal(v.Norm())
 	v.X = vNormed.X

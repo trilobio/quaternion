@@ -9,7 +9,7 @@ type Quat struct {
 	Z float64
 }
 
-func (q *Quat) Unit() {
+func (q *Quat) Identity() {
 	q.W = 1
 	q.X = 0
 	q.Y = 0
@@ -35,9 +35,8 @@ func (q Quat) MulScal(s float64) Quat {
 
 func (q Quat) RotVec(v Vec3) Vec3 {
 	var r = Vec3{q.X, q.Y, q.Z}
-	var s = q.W
 	var m = q.W*q.W + q.X*q.X + q.Y*q.Y + q.Z*q.Z
-	return v.SumVec(r.Cross(v.MulScal(s).SumVec(r.Cross(v))).MulScal(2 / m))
+	return v.SumVec(r.Cross(v.MulScal(q.W).SumVec(r.Cross(v))).MulScal(2 / m))
 }
 
 func (q1 Quat) ApproxEquals(q2 Quat) bool {
@@ -48,4 +47,8 @@ func (q1 Quat) ApproxEquals(q2 Quat) bool {
 		return true
 	}
 	return false
+}
+
+func (q Quat) Conjugate() Quat {
+	return Quat{q.W, -q.X, -q.Y, -q.Z}
 }
