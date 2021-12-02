@@ -52,3 +52,11 @@ func (q1 Quat) ApproxEquals(q2 Quat) bool {
 func (q Quat) Conjugate() Quat {
 	return Quat{q.W, -q.X, -q.Y, -q.Z}
 }
+
+func (q Quat) Norm() float64 {
+	return math.Sqrt(q.W*q.W + q.X*q.X + q.Y*q.Y + q.Z*q.Z)
+}
+
+func (q *Quat) Normalize() {
+	*q = q.MulScal(1 / q.Norm())
+}

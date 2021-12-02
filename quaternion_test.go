@@ -1,6 +1,7 @@
 package quaternion
 
 import (
+	"math"
 	"testing"
 )
 
@@ -33,5 +34,12 @@ func TestMulQuat(t *testing.T) {
 	if !(mulRes.ApproxEquals(qTarg)) {
 		t.Errorf("Multiplied Quat = %v; want %v", mulRes, qTarg)
 	}
+}
 
+func TestNormalize(t *testing.T) {
+	var q1 = Quat{1, 2, 3, 4}
+	q1.Normalize()
+	if !(math.Abs(q1.Norm()-1) < 1e-5) {
+		t.Errorf("Normalizing Quat has norm = %v; want 1", q1.Norm())
+	}
 }
