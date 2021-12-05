@@ -1,6 +1,10 @@
 package quaternion
 
-import "math"
+import (
+	"math"
+
+	"gonum.org/v1/gonum/mat"
+)
 
 type Quat struct {
 	W float64
@@ -39,11 +43,16 @@ func (q Quat) RotVec(v Vec3) Vec3 {
 	return v.SumVec(r.Cross(v.MulScal(q.W).SumVec(r.Cross(v))).MulScal(2 / m))
 }
 
-func (q1 Quat) ApproxEquals(q2 Quat) bool {
-	if math.Abs(q1.W-q2.W) < Tol &&
-		math.Abs(q1.X-q2.X) < Tol &&
-		math.Abs(q1.Y-q2.Y) < Tol &&
-		math.Abs(q1.Z-q2.Z) < Tol {
+// ExtractVec extracts the complex component of the quaternion into a Vec3.
+func (q Quat) ExtractVec() Vec3 {
+	return Vec3{q.X, q.Y, q.Z}
+}
+
+func (q1 Quat) ApproxEquals(q2 Quat, epsilon float64) bool {
+	if math.Abs(q1.W-q2.W) < epsilon &&
+		math.Abs(q1.X-q2.X) < epsilon &&
+		math.Abs(q1.Y-q2.Y) < epsilon &&
+		math.Abs(q1.Z-q2.Z) < epsilon {
 		return true
 	}
 	return false
@@ -59,4 +68,59 @@ func (q Quat) Norm() float64 {
 
 func (q *Quat) Normalize() {
 	*q = q.MulScal(1 / q.Norm())
+}
+
+func (q *Quat) ToRotMat() mat.Matrix {
+	rData := []float64{
+		1 - 2*(q.Y*q.Y+q.Z*q.Z), 2 * (q.X*q.Y - q.Z*q.W), 2 * (q.X*q.Z + q.Y*q.W),
+		2 * (q.X*q.Y + q.Z*q.W), 1 - 2*(q.X*q.X+q.Z*q.Z), 2 * (q.Y*q.Z - q.X*q.W),
+		2 * (q.X*q.Z - q.Y*q.W), 2 * (q.Y*q.Z + q.X*q.W), 1 - 2*(q.X*q.X+q.Y*q.Y),
+	}
+	return mat.NewDense(3, 3, rData)
+}
+
+func QuatFromRotMat(m mat.Matrix) Quat {
+	var Q Quat
+	var diag = []float64{m.At(0, 0), m.At(1, 1), m.At(2, 2), mat.Trace(m)}
+	idx := argMax(diag)
+
+	if idx == 0 {
+		Q.W = m.At(2, 1) - m.At(1, 2)
+		Q.X = 1 + m.At(0, 0) - m.At(1, 1) - m.At(2, 2)
+		Q.Y = m.At(0, 1) + m.At(1, 0)
+		Q.Z = m.At(0, 2) + m.At(2, 0)
+	} else if idx == 1 {
+		Q.W = m.At(0, 2) - m.At(2, 0)
+		Q.X = m.At(1, 0) + m.At(0, 1)
+		Q.Y = 1 - m.At(0, 0) + m.At(1, 1) - m.At(2, 2)
+		Q.Z = m.At(1, 2) + m.At(2, 1)
+	} else if idx == 2 {
+		Q.W = m.At(1, 0) - m.At(0, 1)
+		Q.X = m.At(2, 0) + m.At(0, 2)
+		Q.Y = m.At(2, 1) + m.At(1, 2)
+		Q.Z = 1 - m.At(0, 0) - m.At(1, 1) + m.At(2, 2)
+	} else if idx == 3 {
+		Q.W = 1 + m.At(0, 0) + m.At(1, 1) + m.At(2, 2)
+		Q.X = m.At(2, 1) - m.At(1, 2)
+		Q.Y = m.At(0, 2) - m.At(2, 0)
+		Q.Z = m.At(1, 0) - m.At(0, 1)
+	}
+	Q.Normalize()
+	return Q
+}
+
+func argMax(arr []float64) int {
+	if len(arr) == 0 {
+		return -1
+	}
+
+	var amax int = 0
+	var maxVal float64 = arr[0]
+	for i := 1; i < len(arr); i++ {
+		if arr[i] > maxVal {
+			amax = i
+			maxVal = arr[i]
+		}
+	}
+	return amax
 }
